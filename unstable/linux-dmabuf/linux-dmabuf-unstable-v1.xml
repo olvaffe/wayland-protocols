@@ -24,10 +24,11 @@
     DEALINGS IN THE SOFTWARE.
   </copyright>
 
-  <interface name="zwp_linux_dmabuf_v1" version="3">
+  <interface name="zwp_linux_dmabuf_v1" version="4">
     <description summary="factory for creating dmabuf-based wl_buffers">
       Following the interfaces from:
       https://www.khronos.org/registry/egl/extensions/EXT/EGL_EXT_image_dma_buf_import.txt
+      https://www.khronos.org/registry/EGL/extensions/EXT/EGL_EXT_image_dma_buf_import_modifiers.txt
       and the Linux DRM sub-system's AddFb2 ioctl.
 
       This interface offers ways to create generic dmabuf-based
@@ -113,10 +114,8 @@
         For the definition of the format codes, see the
         zwp_linux_buffer_params_v1::create request.
 
-        Warning: the 'format' event is likely to be deprecated and replaced
-        with the 'modifier' event introduced in zwp_linux_dmabuf_v1
-        version 3, described below. Please refrain from using the information
-        received from this event.
+        For each buffer format that the server supports, this event must be
+        sent before any 'modifier' event for the same buffer format.
       </description>
       <arg name="format" type="uint" summary="DRM_FORMAT code"/>
     </event>
@@ -130,7 +129,11 @@
         the client has received all supported format-modifier pairs.
 
         For the definition of the format and modifier codes, see the
-        zwp_linux_buffer_params_v1::create request.
+        zwp_linux_buffer_params_v1::create and zwp_linux_buffer_params_v1::add
+        requests.
+
+        Note that DRM_FORMAT_MOD_INVALID (that is, modifier_hi == 0x00ffffff
+        and modifier_lo == 0xffffffff) is not a valid modifier in this event.
       </description>
       <arg name="format" type="uint" summary="DRM_FORMAT code"/>
       <arg name="modifier_hi" type="uint"
@@ -200,6 +203,11 @@
         This request raises the PLANE_IDX error if plane_idx is too large.
         The error PLANE_SET is raised if attempting to set a plane that
         was already set.
+
+        Note that DRM_FORMAT_MOD_INVALID (that is, modifier_hi == 0x00ffffff
+        and modifier_lo == 0xffffffff) is always allowed and has a special
+        meaning. It indicates that the modifier is derived from the dmabuf fd
+        rather than explicitly specified.
       </description>
       <arg name="fd" type="fd" summary="dmabuf fd"/>
       <arg name="plane_idx" type="uint" summary="plane index"/>
